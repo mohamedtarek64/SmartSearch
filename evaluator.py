@@ -1,71 +1,69 @@
-from engine import IREngine
+import os
 import json
+from engine import IREngine
 
 def run_evaluation():
     engine = IREngine()
-    try:
+    if os.path.exists("index.json"):
         engine.load_index("index.json")
-    except:
-        print("Index not found. Please run app.py first.")
+    else:
+        print("Index not found. Please run data_collector.py first.")
         return
 
-    # Define ground truth for evaluation
-    # Format: { "query": [list_of_relevant_substrings_in_titles] }
-    # We will use substrings to match instead of exact IDs because IDs might change
+    # Dynamic Ground Truth: Keywords that SHOULD appear in relevant documents
+    # This is more robust for a live web scraping system than fixed IDs
     ground_truth = {
-        "AI and technology": ["Artificial Intelligence", "AI", "technology"],
-        "Quantum computing": ["Quantum bits", "qubits", "Quantum"],
-        "Space mission Moon": ["Artemis", "Moon", "NASA"],
-        "Rohit Sharma cricket": ["Rohit Sharma", "ODI", "New Zealand"],
-        "Gmail outage": ["Gmail", "outage", "404 error"],
-        "Samsung 1TB": ["Samsung", "1TB", "storage"],
-        "Apple Vision Pro": ["Apple Vision Pro", "headset"]
+        "Artificial Intelligence": ["ai", "intelligence", "neural", "learning"],
+        "Space Exploration": ["nasa", "moon", "space", "artemis", "orbit"],
+        "Modern Technology": ["tech", "digital", "software", "innovation"],
+        "Future Science": ["research", "discovery", "scientist", "breakthrough"]
     }
 
     print("\n" + "="*60)
-    print("      IR SYSTEM EVALUATION REPORT (BM25)")
+    print("      IR SYSTEM EVALUATION REPORT (BM25 Engine)")
     print("="*60)
-    print(f"{'Query':<25} | {'Prec.':<6} | {'Recall':<6} | {'F1'}")
+    print(f"{'Query Topic':<25} | {'Prec.':<6} | {'Recall':<6} | {'F1'}")
     print("-" * 60)
 
     total_precision = 0
     total_recall = 0
-    total_f1 = 0
+    num_queries = len(ground_truth)
 
     for query, relevant_keywords in ground_truth.items():
         results = engine.search(query, top_k=10)
-        retrieved_docs = [res for res in results]
         
-        # Determine relevance based on keywords in metadata title
-        relevant_retrieved = []
-        for res in retrieved_docs:
+        # A document is considered "relevant" if it contains any of the target keywords
+        # in its title or snippet.
+        tp = 0
+        for res in results:
             title = res["metadata"].get("title", "").lower()
             snippet = res["metadata"].get("snippet", "").lower()
             if any(kw.lower() in title or kw.lower() in snippet for kw in relevant_keywords):
-                relevant_retrieved.append(res["id"])
-
-        # For evaluation purposes, we assume there are at least 2 relevant docs in the system for these queries
-        # (This is a simplification for the demo)
-        assumed_relevant_count = max(len(relevant_retrieved), 2) 
+                tp += 1
         
-        tp = len(relevant_retrieved)
-        fp = len(retrieved_docs) - tp
-        fn = assumed_relevant_count - tp if assumed_relevant_count > tp else 0
-
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        # Metrics Calculation
+        # Precision: % of retrieved docs that are relevant
+        precision = tp / len(results) if len(results) > 0 else 0
+        
+        # Recall: Since we don't have a fixed total of relevant docs in a live system,
+        # we assume a baseline of 5 relevant docs per topic for this evaluation.
+        assumed_relevant_total = 5 
+        recall = tp / assumed_relevant_total if assumed_relevant_total > 0 else 0
+        
+        # F1 Score
+        f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
         total_precision += precision
         total_recall += recall
-        total_f1 += f1
+        
+        print(f"{query:<25} | {precision:<6.2f} | {recall:<6.2f} | {f1:.2f}")
 
-        print(f"{query[:25]:<25} | {precision:.3f}  | {recall:.3f}  | {f1:.3f}")
-
-    num_queries = len(ground_truth)
-    print("-" * 50)
-    print(f"{'AVERAGE':<25} | {total_precision/num_queries:.3f}  | {total_recall/num_queries:.3f}  | {total_f1/num_queries:.3f}")
-    print("="*50 + "\n")
+    avg_p = total_precision / num_queries
+    avg_r = total_recall / num_queries
+    
+    print("-" * 60)
+    print(f"{'AVERAGE SYSTEM METRICS':<25} | {avg_p:<6.2f} | {avg_r:<6.2f} | {(2*avg_p*avg_r)/(avg_p+avg_r) if (avg_p+avg_r)>0 else 0:.2f}")
+    print("="*60 + "\n")
 
 if __name__ == "__main__":
     run_evaluation()
