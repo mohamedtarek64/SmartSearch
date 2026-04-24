@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>SmartSearch Pro - Enterprise Search Lab</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        secondary: "#50606f",
+                        "on-secondary": "#ffffff",
+                        primary: "#00113a",
+                        "surface-variant": "#e3e2e8",
+                        "on-tertiary-container": "#8d9092",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "surface-container-highest": "#e3e2e8",
+                        "inverse-on-surface": "#f1f0f6",
+                        "secondary-container": "#d1e1f4",
+                        "secondary-fixed-dim": "#b8c8da",
+                        "outline-variant": "#c5c6d2",
+                        "on-secondary-fixed-variant": "#394857",
+                        "tertiary-container": "#26292b",
+                        "surface-tint": "#435b9f",
+                        "on-surface-variant": "#444650",
+                        "surface-container": "#efedf3",
+                        "on-tertiary-fixed": "#191c1e",
+                        outline: "#757682",
+                        "on-surface": "#1a1b20",
+                        "on-primary-fixed-variant": "#2a4386",
+                        "on-primary-fixed": "#00174a",
+                        "primary-fixed-dim": "#b3c5ff",
+                        "on-primary-container": "#758dd5",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-error": "#ffffff",
+                        tertiary: "#111516",
+                        "on-secondary-container": "#556474",
+                        "surface-dim": "#dad9e0",
+                        "surface-bright": "#faf8ff",
+                        "surface-container-low": "#f4f3f9",
+                        surface: "#faf8ff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#d4e4f6",
+                        "surface-container-high": "#e9e7ee",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        background: "#faf8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "inverse-primary": "#b3c5ff",
+                        "primary-container": "#002366",
+                        "on-secondary-fixed": "#0d1d2a",
+                        "inverse-surface": "#2f3035",
+                        "on-background": "#1a1b20",
+                        error: "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#dbe1ff"
+                    },
+                    borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"},
+                    spacing: {"margin-sm": "16px", "margin-lg": "48px", gutter: "24px", "margin-md": "32px", unit: "8px", "container-padding": "32px"},
+                    fontFamily: {"body-md": ["Inter"], caption: ["Inter"], "body-lg": ["Inter"], h3: ["Inter"], h2: ["Inter"], "label-sm": ["Inter"], h1: ["Inter"]},
+                    fontSize: {"body-md": ["16px", {lineHeight: "1.6", letterSpacing: "0", fontWeight: "400"}], caption: ["12px", {lineHeight: "1.4", letterSpacing: "0", fontWeight: "400"}], "body-lg": ["18px", {lineHeight: "1.6", letterSpacing: "0", fontWeight: "400"}], h3: ["24px", {lineHeight: "1.4", letterSpacing: "0", fontWeight: "600"}], h2: ["32px", {lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "600"}], "label-sm": ["14px", {lineHeight: "1", letterSpacing: "0.02em", fontWeight: "500"}], h1: ["40px", {lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700"}]}
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #e0f2fe 0%, #faf8ff 100%);
+            min-height: 100vh;
+        }
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            border-left: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .search-glow:focus-within {
+            box-shadow: 0 0 20px rgba(0, 35, 102, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-results {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-background antialiased">
+    <!-- SideNavBar -->
+    <nav class="fixed left-0 top-0 h-full flex flex-col p-4 z-40 bg-white/10 backdrop-blur-xl w-64 border-r border-white/20 shadow-[0_8px_32px_rgba(0,35,102,0.05)]">
+        <div class="mb-10 px-2 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-white">science</span>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tighter text-[#002366]">SmartSearch Pro</h1>
+                <p class="text-[10px] uppercase tracking-widest text-secondary opacity-60">Enterprise Search</p>
+            </div>
+        </div>
+        <div class="space-y-1">
+            <a class="flex items-center gap-3 px-4 py-3 bg-white/20 text-[#002366] font-semibold rounded-lg transition-all duration-300" href="#">
+                <span class="material-symbols-outlined">search</span>
+                <span class="text-sm">Search Lab</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-[#002366] transition-all duration-300" href="/stats" target="_blank">
+                <span class="material-symbols-outlined">analytics</span>
+                <span class="text-sm">Engine Stats</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-[#002366] transition-all duration-300" href="https://www.bbc.com/news/technology" target="_blank">
+                <span class="material-symbols-outlined">language</span>
+                <span class="text-sm">News Feed</span>
+            </a>
+        </div>
+
+        <div class="mt-auto p-4 bg-primary-container/5 rounded-xl border border-white/20">
+            <p class="text-[10px] font-bold text-primary uppercase mb-1">CRAWLER STATUS</p>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-xs font-medium text-emerald-700">BM25 Engine Active</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="fixed top-0 right-0 left-64 h-16 flex items-center justify-between px-8 z-30 bg-white/5 backdrop-blur-2xl border-b border-white/10 shadow-sm">
+        <div class="flex items-center gap-4 text-[#002366] font-medium">
+            <span class="text-primary font-extrabold tracking-tight">SmartSearch Pro</span>
+            <div class="h-4 w-px bg-slate-300"></div>
+            <span class="text-secondary opacity-80 text-sm">Graduation Project Instance</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="text-right">
+                <p class="text-[12px] font-bold text-[#002366] leading-none">Research Admin</p>
+                <p class="text-[10px] text-secondary">Secured Environment</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-white">
+                <span class="material-symbols-outlined">person</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="ml-64 pt-24 pb-12 px-8">
+        <!-- Search Section -->
+        <section class="max-w-4xl mx-auto mb-12">
+            <div class="flex items-center gap-4">
+                <div class="relative flex-grow group search-glow glass-panel bg-white/40 rounded-xl px-6 py-4 flex items-center gap-4 transition-all duration-300 border border-white/60">
+                    <span class="material-symbols-outlined text-secondary">search</span>
+                    <input id="searchInput" class="bg-transparent border-none focus:ring-0 w-full text-lg placeholder:text-secondary/50 text-primary" placeholder="Ask the live news engine..." type="text"/>
+                    <button id="clearBtn" class="p-2 hover:bg-white/40 rounded-lg transition-colors">
+                        <span class="material-symbols-outlined text-secondary text-sm">close</span>
+                    </button>
+                </div>
+                <button id="searchBtn" class="bg-primary-container text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:-translate-y-0.5 transition-transform active:scale-95">
+                    <span class="material-symbols-outlined text-sm">bolt</span>
+                    Execute Search
+                </button>
+            </div>
+        </section>
+
+        <!-- Stats Row -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="glass-panel bg-white/40 p-6 rounded-[14px] shadow-sm border border-white/60">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="p-2 bg-blue-50 rounded-lg">
+                        <span class="material-symbols-outlined text-blue-600">description</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-secondary uppercase tracking-widest mb-1">Total Documents Scraped</p>
+                <h2 id="stat-docs" class="text-3xl font-extrabold text-primary">0</h2>
+            </div>
+            <div class="glass-panel bg-white/40 p-6 rounded-[14px] shadow-sm border border-white/60">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="p-2 bg-purple-50 rounded-lg">
+                        <span class="material-symbols-outlined text-purple-600">tag</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-secondary uppercase tracking-widest mb-1">Unique Terms in Index</p>
+                <h2 id="stat-terms" class="text-3xl font-extrabold text-primary">0</h2>
+            </div>
+            <div class="glass-panel bg-white/40 p-6 rounded-[14px] shadow-sm border border-white/60">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="p-2 bg-orange-50 rounded-lg">
+                        <span class="material-symbols-outlined text-orange-600">analytics</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-secondary uppercase tracking-widest mb-1">BM25 Average Length</p>
+                <h2 id="stat-avg" class="text-3xl font-extrabold text-primary">0</h2>
+            </div>
+        </section>
+
+        <!-- Results Grid -->
+        <section class="max-w-5xl mx-auto">
+            <h3 class="text-xl font-bold text-primary mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined">list_alt</span>
+                Search Results
+            </h3>
+            
+            <div id="results" class="space-y-4">
+                <!-- Real results will be injected here -->
+                <div class="text-center py-20 bg-white/20 rounded-2xl border-2 border-dashed border-white/40">
+                    <span class="material-symbols-outlined text-6xl text-white/60 mb-4">search_off</span>
+                    <h3 class="text-xl font-bold text-primary/60">Waiting for query...</h3>
+                    <p class="text-secondary/60">Explore the live indexed news database.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultsContainer = document.getElementById('results');
+
+        // Fetch Stats
+        function updateStats() {
+            fetch('/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-docs').innerText = data.total_docs.toLocaleString();
+                    document.getElementById('stat-terms').innerText = data.total_terms.toLocaleString();
+                    document.getElementById('stat-avg').innerText = data.avg_dl || 0;
+                });
+        }
+        updateStats();
+
+        // Search Logic
+        function performSearch() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            resultsContainer.innerHTML = '<div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div></div>';
+
+            fetch(`/search?q=${encodeURIComponent(query)}`)
+                .then(r => r.json())
+                .then(data => {
+                    renderResults(data);
+                });
+        }
+
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            resultsContainer.innerHTML = '';
+        });
+
+        function renderResults(results) {
+            if (results.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="text-center py-12 bg-white/20 rounded-2xl">
+                        <span class="material-symbols-outlined text-4xl text-secondary mb-2">info</span>
+                        <p class="text-secondary font-medium">No results found for your search.</p>
+                    </div>`;
+                return;
+            }
+
+            resultsContainer.innerHTML = results.map((res, index) => `
+                <div class="glass-panel bg-white/60 p-6 rounded-[14px] shadow-sm border border-white/80 hover:shadow-md hover:bg-white/80 transition-all duration-300 group animate-results" style="animation-delay: ${index * 50}ms">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-primary/5 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">${res.id}</span>
+                            <h4 class="text-lg font-bold text-primary group-hover:text-blue-700 transition-colors">${res.metadata.title}</h4>
+                        </div>
+                        <div class="flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                            <span class="material-symbols-outlined text-amber-500 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="text-sm font-bold text-amber-900">${res.score}</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-secondary mb-4 line-clamp-2 leading-relaxed">${res.metadata.snippet}</p>
+                    <div class="flex items-center gap-6 text-[11px] text-secondary/70">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">language</span>
+                            <span>Source: ${res.metadata.source || 'Live Web'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">schedule</span>
+                            <span>Indexed: ${res.metadata.timestamp || 'Just now'}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
