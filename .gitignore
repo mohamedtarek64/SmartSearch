@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+.env
+bin/
+lib/
+include/
+share/
+
+# Project Specific
+index.json
+public_dataset.csv
+MY_PROJECT_EXPLANATION.md
+CODE_EXPLANATION.md
+*.log
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# NLTK Data (sometimes downloaded to local folder)
+nltk_data/

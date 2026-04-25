@@ -87,4 +87,3 @@ To deliver a professional presentation, consider this split:
 4.  **Open Browser:** Go to `http://127.0.0.1:5001`
 
 ---
-**Good luck with your graduation project! You have implemented a professional-grade IR system.** 🎓🌟

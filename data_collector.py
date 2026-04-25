@@ -1,22 +1,22 @@
 import os
 import json
 from engine import IREngine
-from scraper import get_all_live_data
+from scraper import get_all_diverse_data
 
 def run_automated_collection():
     """
-    Main entry point for data collection using Web Scraping.
-    Builds a fresh index from live web data.
+    Main entry point for data collection using Web Scraping, APIs, and Datasets.
+    Builds a fresh index from diverse sources.
     """
     print("="*50)
-    print("SMARTSEARCH: LIVE WEB SCRAPING INITIATED")
+    print("SMARTSEARCH: MULTI-SOURCE DATA COLLECTION")
     print("="*50)
     
     # Initialize Engine
     engine = IREngine()
     
-    # 1. Fetch data via Scraping
-    articles = get_all_live_data()
+    # 1. Fetch data from all sources (News, Reddit, Books, Datasets)
+    articles = get_all_diverse_data()
     
     if not articles:
         print("Error: No articles were scraped. Check internet connection.")
