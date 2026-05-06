@@ -32,7 +32,8 @@ def run_automated_collection():
         meta = {
             "title": title,
             "snippet": content[:160] + ("..." if len(content) > 160 else ""),
-            "source": "Web Scraper (Live News)",
+            "source": article.get("source", "Diverse Web"),
+            "url": article.get("url", "#"),
             "timestamp": "Just now"
         }
         

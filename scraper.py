@@ -11,7 +11,7 @@ def scrape_rss_feed(url, source_name):
     General function to fetch data from RSS feeds (Reliable and fast).
     Works for: News sites, Reddit, etc.
     """
-    print(f"📡 Fetching from {source_name} (RSS)...")
+    print(f"Fetching from {source_name} (RSS)...")
     articles = []
     try:
         feed = feedparser.parse(url)
@@ -29,10 +29,10 @@ def scrape_rss_feed(url, source_name):
                 "source": source_name,
                 "type": "Live News/Feed"
             })
-        print(f"✅ Success: Found {len(articles)} entries in {source_name}.")
+        print(f"Success: Found {len(articles)} entries in {source_name}.")
         return articles
     except Exception as e:
-        print(f"❌ Failed to fetch {source_name}: {e}")
+        print(f"Failed to fetch {source_name}: {e}")
         return []
 
 def fetch_reddit_data(subreddit="technology"):
@@ -61,7 +61,7 @@ def load_public_datasets():
     Simulates loading from public datasets (e.g., CSV files from Kaggle).
     We will generate a small internal dataset if no files exist.
     """
-    print("📂 Loading Public Datasets...")
+    print("Loading Public Datasets...")
     dataset_path = "public_dataset.csv"
     
     if os.path.exists(dataset_path):
@@ -93,16 +93,24 @@ def get_all_diverse_data():
     news_sources = [
         ("https://www.wired.com/feed/rss", "Wired"),
         ("https://feeds.bbci.co.uk/news/technology/rss.xml", "BBC Technology"),
-        ("https://hnrss.org/frontpage", "Hacker News")
+        ("https://hnrss.org/frontpage", "Hacker News"),
+        ("http://rss.cnn.com/rss/cnn_tech.rss", "CNN Tech"),
+        ("https://www.theverge.com/rss/index.xml", "The Verge"),
+        ("https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml", "NYT Tech"),
+        ("https://www.nasa.gov/rss/dyn/breaking_news.rss", "NASA"),
+        ("https://feeds.feedburner.com/TechCrunch/", "TechCrunch"),
+        ("https://www.zdnet.com/news/rss.xml", "ZDNet")
     ]
     
     for url, name in news_sources:
         all_data.extend(scrape_rss_feed(url, name))
         time.sleep(0.5)
 
-    # 2. Social Media (Reddit)
-    all_data.extend(fetch_reddit_data("technology"))
-    all_data.extend(fetch_reddit_data("science"))
+    # 2. Social Media (Reddit) - Multi-Subreddit crawl
+    subreddits = ["technology", "science", "programming", "space", "artificial", "futurology", "news"]
+    for sub in subreddits:
+        all_data.extend(fetch_reddit_data(sub))
+        time.sleep(0.3)
 
     # 3. Public Datasets
     all_data.extend(load_public_datasets())

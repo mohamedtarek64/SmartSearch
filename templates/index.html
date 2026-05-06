@@ -136,7 +136,6 @@
         <div class="flex items-center gap-4 text-[#002366] font-medium">
             <span class="text-primary font-extrabold tracking-tight">SmartSearch Pro</span>
             <div class="h-4 w-px bg-slate-300"></div>
-            <span class="text-secondary opacity-80 text-sm">Graduation Project Instance</span>
         </div>
         <div class="flex items-center gap-3">
             <div class="text-right">
@@ -201,10 +200,24 @@
 
         <!-- Results Grid -->
         <section class="max-w-5xl mx-auto">
-            <h3 class="text-xl font-bold text-primary mb-6 flex items-center gap-2">
-                <span class="material-symbols-outlined">list_alt</span>
-                Search Results
-            </h3>
+            <div id="evaluation-dashboard" class="hidden mb-8 grid grid-cols-1 md:grid-cols-4 gap-4 animate-results">
+                <div class="bg-primary/5 border border-primary/10 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold text-primary uppercase mb-1">Precision</span>
+                    <h4 id="eval-precision" class="text-2xl font-black text-primary">0.00</h4>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold text-emerald-700 uppercase mb-1">Recall</span>
+                    <h4 id="eval-recall" class="text-2xl font-black text-emerald-700">0.00</h4>
+                </div>
+                <div class="bg-purple-50 border border-purple-100 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold text-purple-700 uppercase mb-1">F1-Score</span>
+                    <h4 id="eval-f1" class="text-2xl font-black text-purple-700">0.00</h4>
+                </div>
+                <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 flex flex-col items-center justify-center">
+                    <span class="text-[10px] font-bold text-amber-700 uppercase mb-1">Relevance</span>
+                    <h4 id="eval-tp" class="text-2xl font-black text-amber-700">0/10</h4>
+                </div>
+            </div>
             
             <div id="results" class="space-y-4">
                 <!-- Real results will be injected here -->
@@ -218,62 +231,86 @@
     </main>
 
     <script>
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.getElementById('searchBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const resultsContainer = document.getElementById('results');
+        const els = {
+            searchInput: document.getElementById('searchInput'),
+            searchBtn: document.getElementById('searchBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            results: document.getElementById('results'),
+            dashboard: document.getElementById('evaluation-dashboard'),
+            statDocs: document.getElementById('stat-docs'),
+            statTerms: document.getElementById('stat-terms'),
+            statAvg: document.getElementById('stat-avg'),
+            evalPrecision: document.getElementById('eval-precision'),
+            evalRecall: document.getElementById('eval-recall'),
+            evalF1: document.getElementById('eval-f1'),
+            evalTp: document.getElementById('eval-tp')
+        };
 
-        // Fetch Stats
-        function updateStats() {
-            fetch('/stats')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('stat-docs').innerText = data.total_docs.toLocaleString();
-                    document.getElementById('stat-terms').innerText = data.total_terms.toLocaleString();
-                    document.getElementById('stat-avg').innerText = data.avg_dl || 0;
-                });
+        const ui = {
+            loading: '<div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div></div>',
+            idle: `
+                <div class="text-center py-20 bg-white/20 rounded-2xl border-2 border-dashed border-white/40">
+                    <span class="material-symbols-outlined text-6xl text-white/60 mb-4">search_off</span>
+                    <h3 class="text-xl font-bold text-primary/60">Waiting for query...</h3>
+                    <p class="text-secondary/60">Explore the live indexed news database.</p>
+                </div>`,
+            empty: `
+                <div class="text-center py-12 bg-white/20 rounded-2xl">
+                    <span class="material-symbols-outlined text-4xl text-secondary mb-2">info</span>
+                    <p class="text-secondary font-medium">No results found for your search.</p>
+                </div>`,
+            error: `
+                <div class="text-center py-12 bg-red-50 rounded-2xl border border-red-100">
+                    <p class="text-red-700 font-semibold">Search failed. Try again.</p>
+                </div>`
+        };
+
+        function setResults(html) {
+            els.results.innerHTML = html;
         }
-        updateStats();
 
-        // Search Logic
-        function performSearch() {
-            const query = searchInput.value.trim();
-            if (!query) return;
-
-            resultsContainer.innerHTML = '<div class="flex justify-center py-12"><div class="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div></div>';
-
-            fetch(`/search?q=${encodeURIComponent(query)}`)
-                .then(r => r.json())
-                .then(data => {
-                    renderResults(data);
-                });
+        function resetView() {
+            els.searchInput.value = '';
+            els.dashboard.classList.add('hidden');
+            setResults(ui.idle);
         }
 
-        searchBtn.addEventListener('click', performSearch);
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') performSearch();
-        });
-        clearBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            resultsContainer.innerHTML = '';
-        });
+        async function updateStats() {
+            try {
+                const response = await fetch('/stats');
+                const data = await response.json();
+                els.statDocs.innerText = (data.total_docs || 0).toLocaleString();
+                els.statTerms.innerText = (data.total_terms || 0).toLocaleString();
+                els.statAvg.innerText = data.avg_dl || 0;
+            } catch (error) {
+                els.statDocs.innerText = '0';
+                els.statTerms.innerText = '0';
+                els.statAvg.innerText = '0';
+            }
+        }
 
-        function renderResults(results) {
-            if (results.length === 0) {
-                resultsContainer.innerHTML = `
-                    <div class="text-center py-12 bg-white/20 rounded-2xl">
-                        <span class="material-symbols-outlined text-4xl text-secondary mb-2">info</span>
-                        <p class="text-secondary font-medium">No results found for your search.</p>
-                    </div>`;
+        function renderMetrics(metrics = {}) {
+            els.dashboard.classList.remove('hidden');
+            els.evalPrecision.innerText = (metrics.precision || 0).toFixed(2);
+            els.evalRecall.innerText = (metrics.recall || 0).toFixed(2);
+            els.evalF1.innerText = (metrics.f1_score || 0).toFixed(2);
+            els.evalTp.innerText = `${metrics.relevant_found || 0}/10`;
+        }
+
+        function renderResults(results = []) {
+            if (!results.length) {
+                setResults(ui.empty);
                 return;
             }
 
-            resultsContainer.innerHTML = results.map((res, index) => `
+            const cards = results.map((res, index) => `
                 <div class="glass-panel bg-white/60 p-6 rounded-[14px] shadow-sm border border-white/80 hover:shadow-md hover:bg-white/80 transition-all duration-300 group animate-results" style="animation-delay: ${index * 50}ms">
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center gap-3">
                             <span class="bg-primary/5 text-primary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">${res.id}</span>
-                            <h4 class="text-lg font-bold text-primary group-hover:text-blue-700 transition-colors">${res.metadata.title}</h4>
+                            <a href="${res.metadata.url || '#'}" target="_blank" class="text-lg font-bold text-primary hover:text-blue-700 transition-colors decoration-none">
+                                ${res.metadata.title}
+                            </a>
                         </div>
                         <div class="flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
                             <span class="material-symbols-outlined text-amber-500 text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
@@ -292,8 +329,35 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `);
+
+            setResults(cards.join(''));
         }
+
+        async function performSearch() {
+            const query = els.searchInput.value.trim();
+            if (!query) return;
+
+            setResults(ui.loading);
+
+            try {
+                const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                renderResults(data.results || []);
+                renderMetrics(data.metrics || {});
+            } catch (error) {
+                setResults(ui.error);
+            }
+        }
+
+        els.searchBtn.addEventListener('click', performSearch);
+        els.searchInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') performSearch();
+        });
+        els.clearBtn.addEventListener('click', resetView);
+
+        updateStats();
+        resetView();
     </script>
 </body>
 </html>
