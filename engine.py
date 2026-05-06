@@ -116,7 +116,8 @@ class IREngine:
             return False
         with open(filename, 'r') as f:
             data = json.load(f)
-            self.index = data.get("index", {})
+            # Keep defaultdict behavior after loading so new terms can be added safely.
+            self.index = defaultdict(dict, data.get("index", {}))
             self.doc_metadata = data.get("metadata", {})
             self.doc_lengths = data.get("lengths", {})
             self.num_docs = data.get("num_docs", 0)

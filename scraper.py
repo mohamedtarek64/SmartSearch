@@ -58,27 +58,21 @@ def fetch_reddit_data(subreddit="technology"):
 
 def load_public_datasets():
     """
-    Simulates loading from public datasets (e.g., CSV files from Kaggle).
-    We will generate a small internal dataset if no files exist.
+    Load records from the local public dataset CSV file.
     """
     print("Loading Public Datasets...")
     dataset_path = "public_dataset.csv"
     
-    if os.path.exists(dataset_path):
-        try:
-            df = pd.read_csv(dataset_path)
-            # Assume columns: title, content
-            return df.to_dict('records')
-        except:
-            return []
-    else:
-        # Generate a small sample dataset for demonstration
-        data = [
-            {"title": "Global Warming Trends 2024", "content": "Analysis of temperature changes across the Arctic circle.", "source": "Public Dataset", "type": "Science"},
-            {"title": "SpaceX Starship Launch Data", "content": "Telemetry data from the latest orbital test flight.", "source": "Public Dataset", "type": "Space"},
-            {"title": "Deep Learning Research Paper", "content": "A study on Transformer architectures for NLP tasks.", "source": "Public Dataset", "type": "Education"}
-        ]
-        return data
+    if not os.path.exists(dataset_path):
+        print(f"Dataset file not found: {dataset_path}")
+        return []
+
+    try:
+        df = pd.read_csv(dataset_path)
+        return df.to_dict('records')
+    except Exception as error:
+        print(f"Failed to load dataset: {error}")
+        return []
 
 def fetch_digitized_books():
     """Project Gutenberg provides an RSS feed for new books."""
