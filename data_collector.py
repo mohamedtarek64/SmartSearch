@@ -1,97 +1,63 @@
 import os
-import json
 import hashlib
+import pandas as pd
 from engine import IREngine
 from scraper import get_all_diverse_data
 
 INDEX_FILE = "index.json"
 
-def make_fingerprint(article):
-    """Create a stable key to detect duplicates across runs."""
-    url = (article.get("url") or "").strip().lower()
-    if url and url != "#":
-        return f"url::{url}"
-
-    title = (article.get("title") or "").strip().lower()
-    content = (article.get("content") or "").strip().lower()
-    raw = f"{title}|{content[:300]}"
-    return f"hash::{hashlib.sha1(raw.encode('utf-8')).hexdigest()}"
-
-def run_automated_collection():
+def run_automated_pipeline():
     """
-    Main entry point for data collection using Web Scraping, APIs, and Datasets.
-    Incrementally updates the index from diverse sources.
+    Automated data ingestion pipeline:
+    1. Scrape fresh articles.
+    2. Save to local CSV archive.
+    3. Filter and index unique content.
+    4. Save searchable JSON index.
     """
-    print("="*50)
-    print("SMARTSEARCH: MULTI-SOURCE DATA COLLECTION")
-    print("="*50)
+    print("--- Starting Data Ingestion Pipeline ---")
     
-    # Initialize Engine
     engine = IREngine()
-    existing_docs = 0
-    if os.path.exists(INDEX_FILE) and engine.load_index(INDEX_FILE):
-        existing_docs = engine.num_docs
-        print(f"Loaded existing index with {existing_docs} documents.")
+    engine.load_index(INDEX_FILE)
     
-    # 1. Fetch data from all sources (News, Reddit, Books, Datasets)
     articles = get_all_diverse_data()
-    
     if not articles:
-        print("Error: No articles were scraped. Check internet connection.")
+        print("No new data to process.")
         return
 
-    print(f"Success: Scraped {len(articles)} live articles.")
+    # Update CSV Archive
+    df = pd.DataFrame(articles)
+    df.to_csv("public_dataset.csv", index=False)
+    print(f"Archive updated with {len(articles)} items.")
 
-    existing_fingerprints = set()
-    for meta in engine.doc_metadata.values():
-        url = (meta.get("url") or "").strip().lower()
-        if url and url != "#":
-            existing_fingerprints.add(f"url::{url}")
+    # Process and Index (Strict Deduplication by Title)
+    indexed_titles = {meta.get("title", "").lower().strip() for meta in engine.doc_metadata.values()}
+    newly_added = 0
 
-        title = (meta.get("title") or "").strip().lower()
-        snippet = (meta.get("snippet") or "").strip().lower()
-        if title or snippet:
-            raw = f"{title}|{snippet[:300]}"
-            existing_fingerprints.add(f"hash::{hashlib.sha1(raw.encode('utf-8')).hexdigest()}")
-    
-    # 2. Index the scraped data
-    added_count = 0
-    skipped_count = 0
-
-    for article in articles:
-        fingerprint = make_fingerprint(article)
-        if fingerprint in existing_fingerprints:
-            skipped_count += 1
-            continue
-
-        title = article['title']
-        content = article['content']
+    for art in articles:
+        title = str(art.get("title", "No Title")).strip()
+        url = str(art.get("url", "#"))
         
-        meta = {
-            "title": title,
-            "snippet": content[:160] + ("..." if len(content) > 160 else ""),
-            "source": article.get("source", "Diverse Web"),
-            "url": article.get("url", "#"),
-            "timestamp": "Just now"
-        }
-        
-        new_doc_id = f"scraped_{engine.num_docs}"
-        engine.add_document(new_doc_id, content, meta)
-        existing_fingerprints.add(fingerprint)
-        added_count += 1
-        
-        if added_count % 10 == 0:
-            print(f"Indexed {added_count} new documents...")
+        if title.lower() not in indexed_titles and url != "#":
+            doc_id = hashlib.md5(url.encode()).hexdigest()
+            content = str(art.get("content", ""))
+            
+            meta = {
+                "title": title,
+                "url": url,
+                "source": str(art.get("source", "Web")),
+                "snippet": content[:150] + "...",
+                "timestamp": "Recently Indexed"
+            }
+            
+            engine.add_document(doc_id, content, meta)
+            indexed_titles.add(title.lower())
+            newly_added += 1
 
-    print(f"Skipped duplicates: {skipped_count}")
-    print(f"Added new documents: {added_count}")
-    print(f"Total documents now: {engine.num_docs}")
-
-    # 3. Save the final index
     engine.save_index(INDEX_FILE)
-    print("\n" + "="*50)
-    print("SYSTEM READY: Search index updated from live web data!")
-    print("="*50)
+    
+    print(f"--- Pipeline Finished ---")
+    print(f"Newly Indexed: {newly_added}")
+    print(f"Total searchable documents: {engine.num_docs}")
 
 if __name__ == "__main__":
-    run_automated_collection()
+    run_automated_pipeline()

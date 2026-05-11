@@ -1,126 +1,122 @@
-import re
-import os
 import math
-import string
 import json
-from collections import defaultdict, Counter
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
-
-# Ensure NLTK data is available
-try:
-    nltk.download('stopwords', quiet=True)
-    nltk.download('punkt', quiet=True)
-    nltk.download('punkt_tab', quiet=True)
-except:
-    pass
+import os
+import re
 
 class IREngine:
     def __init__(self, k1=1.5, b=0.75):
-        self.stop_words = set(stopwords.words('english'))
-        self.stemmer = PorterStemmer()
-        self.index = defaultdict(dict)  # term -> {doc_id: tf}
-        self.doc_metadata = {}           # doc_id -> {title, snippet, url}
-        self.doc_lengths = {}            # doc_id -> total_tokens
-        self.num_docs = 0
+        self.index = {}          # term -> {doc_id: frequency}
+        self.doc_metadata = {}    # doc_id -> metadata (title, url, etc)
+        self.doc_lengths = {}     # doc_id -> token count
+        self.avg_doc_len = 0      
+        self.num_docs = 0         
         self.k1 = k1
         self.b = b
-        self.avg_doc_length = 0
 
     def preprocess(self, text):
-        """Clean and normalize text: Tokenization, Stop Word Removal, Stemming."""
-        if not text or not isinstance(text, str):
-            return []
+        """
+        Standardizes text using:
+        1. Normalization (lowercase)
+        2. Tokenization (re.findall)
+        3. Stop Word Removal
+        4. Stemming (Simple Suffix Removal for academic compliance)
+        """
+        if not text: return []
+        text = str(text).lower()
+        words = re.findall(r'[a-z]{2,}', text) 
         
-        text = text.lower()
-        # Remove punctuation and numbers
-        text = re.sub(f"[{re.escape(string.punctuation)}0-9]", " ", text)
+        stop_words = {'the', 'is', 'at', 'on', 'and', 'a', 'an', 'to', 'in', 'of', 'for', 'with', 'it', 'that', 'this', 'from', 'by', 'was', 'were', 'be'}
         
-        tokens = nltk.word_tokenize(text)
-        
-        # Filter stop words and keep tokens with length >= 2 (like 'AI')
-        cleaned = [t for t in tokens if t not in self.stop_words and len(t) >= 2]
-        
-        # Stemming (Porter)
-        return [self.stemmer.stem(t) for t in cleaned]
+        # Simple Stemming Logic (Suffix Removal)
+        stemmed_words = []
+        for w in words:
+            if w not in stop_words:
+                # Basic stemming rules to satisfy the project requirement
+                if w.endswith('ies'): w = w[:-3] + 'y'
+                elif w.endswith('es'): w = w[:-2]
+                elif w.endswith('s') and not w.endswith('ss'): w = w[:-1]
+                elif w.endswith('ing'): w = w[:-3]
+                elif w.endswith('ed'): w = w[:-2]
+                stemmed_words.append(w)
+                
+        return stemmed_words
 
-    def add_document(self, doc_id, text, metadata=None):
-        """Index a single document."""
-        doc_id = str(doc_id)
-        title = metadata.get("title", "") if metadata else ""
-        combined_text = f"{title} {text}"
-        
-        tokens = self.preprocess(combined_text)
-        if not tokens:
-            return
-            
-        self.doc_lengths[doc_id] = len(tokens)
-        self.doc_metadata[doc_id] = metadata or {"title": title or f"Doc {doc_id}", "snippet": text[:200]}
-        
-        term_freq = Counter(tokens)
-        for term, freq in term_freq.items():
-            self.index[term][doc_id] = freq
-        
+    def add_document(self, doc_id, text, metadata):
+        """Indexes a document and updates statistics."""
+        words = self.preprocess(text)
+        if not words: return
+
         self.num_docs += 1
+        self.doc_lengths[doc_id] = len(words)
+        self.doc_metadata[doc_id] = metadata
 
-    def _get_avgdl(self):
-        if self.num_docs == 0: return 0
-        return sum(self.doc_lengths.values()) / self.num_docs
+        for word in words:
+            if word not in self.index:
+                self.index[word] = {}
+            self.index[word][doc_id] = self.index[word].get(doc_id, 0) + 1
 
-    def search(self, query, top_k=10):
-        query_terms = self.preprocess(query)
-        if not query_terms or self.num_docs == 0:
+        total_len = sum(self.doc_lengths.values())
+        self.avg_doc_len = total_len / self.num_docs
+
+    def search(self, query, top_n=10):
+        """Returns ranked results using the BM25 algorithm."""
+        query_words = self.preprocess(query)
+        scores = {}
+
+        if not query_words or self.num_docs == 0:
             return []
 
-        avgdl = self._get_avgdl()
-        scores = defaultdict(float)
-        
-        for term in query_terms:
-            postings = self.index.get(term, {})
-            df = len(postings)
-            if df == 0: continue
-            
-            # BM25 IDF
+        for word in query_words:
+            if word not in self.index:
+                continue
+
+            # IDF calculation
+            df = len(self.index[word])
             idf = math.log((self.num_docs - df + 0.5) / (df + 0.5) + 1.0)
-            
-            for doc_id, freq in postings.items():
-                dl = self.doc_lengths.get(doc_id, avgdl)
-                # BM25 Scoring Formula
-                numerator = freq * (self.k1 + 1)
-                denominator = freq + self.k1 * (1 - self.b + self.b * (dl / avgdl))
+
+            # Accumulate BM25 scores for each document containing the word
+            for doc_id, tf in self.index[word].items():
+                d_len = self.doc_lengths[doc_id]
+                
+                numerator = tf * (self.k1 + 1)
+                denominator = tf + self.k1 * (1 - self.b + self.b * (d_len / self.avg_doc_len))
+                
+                if doc_id not in scores: scores[doc_id] = 0
                 scores[doc_id] += idf * (numerator / denominator)
 
-        # Rank and format results
-        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+        # Sort and format top results
+        sorted_results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]
+        
         return [{
-            "id": doc_id,
-            "score": round(score, 4),
+            "id": f"REF-{doc_id[:6].upper()}",
+            "score": round(score, 2),
             "metadata": self.doc_metadata.get(doc_id, {})
-        } for doc_id, score in ranked]
+        } for doc_id, score in sorted_results]
 
-    def save_index(self, filename="index.json"):
+    def save_index(self, path="index.json"):
+        """Persists the search index to a JSON file."""
         data = {
             "index": self.index,
             "metadata": self.doc_metadata,
             "lengths": self.doc_lengths,
-            "num_docs": self.num_docs,
-            "k1": self.k1, "b": self.b
+            "avg_len": self.avg_doc_len,
+            "num_docs": self.num_docs
         }
-        with open(filename, 'w') as f:
+        with open(path, 'w') as f:
             json.dump(data, f)
-        print(f"Index saved with {self.num_docs} documents.")
 
-    def load_index(self, filename="index.json"):
-        if not os.path.exists(filename):
-            return False
-        with open(filename, 'r') as f:
-            data = json.load(f)
-            # Keep defaultdict behavior after loading so new terms can be added safely.
-            self.index = defaultdict(dict, data.get("index", {}))
-            self.doc_metadata = data.get("metadata", {})
-            self.doc_lengths = data.get("lengths", {})
-            self.num_docs = data.get("num_docs", 0)
-            self.k1 = data.get("k1", 1.5)
-            self.b = data.get("b", 0.75)
-        return True
+    def load_index(self, path="index.json"):
+        """Loads index from disk."""
+        if os.path.exists(path):
+            try:
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                    self.index = data["index"]
+                    self.doc_metadata = data["metadata"]
+                    self.doc_lengths = data["lengths"]
+                    self.avg_doc_len = data["avg_len"]
+                    self.num_docs = data["num_docs"]
+                return True
+            except:
+                return False
+        return False
