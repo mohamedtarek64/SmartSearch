@@ -44,7 +44,6 @@ Integrated spell-checking functionality analyzes user input against the indexed 
 ├── spell_checker.py        # String similarity and query suggestion logic
 ├── evaluator.py            # Performance auditing and metrics suite
 ├── index.json              # Persistent Inverted Index storage
-├── public_dataset.csv      # Master archive of scraped raw data
 ├── templates/
 │   └── index.html          # Responsive web search interface
 └── PROJECT_DOCUMENTATION.md # Detailed technical report

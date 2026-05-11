@@ -36,6 +36,7 @@ def scrape_rss_feed(url, source_name):
         pass 
     return articles
 
+
 def load_local_archive():
     """Loads previously saved data from CSV if available."""
     if os.path.exists("public_dataset.csv"):
