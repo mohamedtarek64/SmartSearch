@@ -5,29 +5,14 @@ SmartSearch Pro is a high-performance, scalable news search engine designed to d
 ## System Architecture
 
 ```mermaid
-graph TD
-    subgraph Collection_Layer [Data Collection Layer]
-        A[External RSS Feeds] -->|Scraping| B(scraper.py)
-        B -->|Aggregation| C(data_collector.py)
-    end
-
-    subgraph Storage_Layer [Processing & Storage Layer]
-        C -->|Deduplication| D[(CSV Archive)]
-        D -->|Preprocessing| E(engine.py)
-        E -->|Indexing| F[(index.json)]
-    end
-
-    subgraph Interface_Layer [Search Interface Layer]
-        G[User Interface] -->|Query| H(app.py)
-        H -->|Correction| I(spell_checker.py)
-        H -->|Retrieval| F
-        F -->|Ranked Results| H
-        H -->|Display| G
-    end
-
-    style Collection_Layer fill:#f9f,stroke:#333,stroke-width:2px
-    style Storage_Layer fill:#bbf,stroke:#333,stroke-width:2px
-    style Interface_Layer fill:#dfd,stroke:#333,stroke-width:2px
+graph LR
+    Scraper[Scraper Module] --> Archive[(CSV Archive)]
+    Archive --> Engine[BM25 Engine]
+    Engine --> Index[(Search Index)]
+    
+    User[Search UI] <--> App[Flask Server]
+    App <--> Spell[Spell Checker]
+    App <--> Index
 ```
 
 ## Core Features
