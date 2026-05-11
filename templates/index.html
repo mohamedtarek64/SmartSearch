@@ -219,6 +219,12 @@
                 </div>
             </div>
             
+            <div id="suggestion-container" class="hidden mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl animate-results">
+                <p class="text-sm text-blue-700">
+                    Did you mean: <button id="suggestion-link" class="font-bold underline hover:text-blue-900"></button>?
+                </p>
+            </div>
+
             <div id="results" class="space-y-4">
                 <!-- Real results will be injected here -->
                 <div class="text-center py-20 bg-white/20 rounded-2xl border-2 border-dashed border-white/40">
@@ -339,10 +345,24 @@
             if (!query) return;
 
             setResults(ui.loading);
+            document.getElementById('suggestion-container').classList.add('hidden');
 
             try {
                 const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
+                
+                // Handle suggestion
+                if (data.suggestion) {
+                    const suggEl = document.getElementById('suggestion-container');
+                    const linkEl = document.getElementById('suggestion-link');
+                    linkEl.innerText = data.suggestion;
+                    linkEl.onclick = () => {
+                        els.searchInput.value = data.suggestion;
+                        performSearch();
+                    };
+                    suggEl.classList.remove('hidden');
+                }
+
                 renderResults(data.results || []);
                 renderMetrics(data.metrics || {});
             } catch (error) {

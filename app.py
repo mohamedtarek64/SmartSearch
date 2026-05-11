@@ -1,14 +1,18 @@
 from flask import Flask, render_template, request, jsonify
 from engine import IREngine
+from spell_checker import SpellChecker
 import os
 
 app = Flask(__name__)
 engine = IREngine()
+spell_checker = None
 
 # Initial Index Loading
 INDEX_FILE = "index.json"
 if os.path.exists(INDEX_FILE):
     engine.load_index(INDEX_FILE)
+    # Initialize spell checker with terms from the index
+    spell_checker = SpellChecker(engine.index)
 
 @app.route('/')
 def home():
@@ -17,9 +21,14 @@ def home():
 
 @app.route('/search')
 def search():
-    """Handles search queries and returns ranked JSON results."""
+    """Handles search queries and returns ranked JSON results with spelling suggestions."""
     query = request.args.get('q', '')
     results = engine.search(query, top_n=10)
+    
+    # Check for spelling suggestions
+    suggestion = None
+    if spell_checker and query:
+        suggestion = spell_checker.suggest(query)
     
     # Placeholder metrics for the UI dashboard
     metrics = {
@@ -31,7 +40,8 @@ def search():
     
     return jsonify({
         "results": results,
-        "metrics": metrics
+        "metrics": metrics,
+        "suggestion": suggestion
     })
 
 @app.route('/stats')
@@ -44,5 +54,4 @@ def stats():
     })
 
 if __name__ == '__main__':
-    # Start the Flask development server
     app.run(debug=True, port=5001)

@@ -1,35 +1,86 @@
-# 🔍 SmartSearch: Advanced Information Retrieval System
+# SmartSearch Pro: Advanced Information Retrieval System
 
-## 1. Project Overview
-**SmartSearch** is a high-performance Information Retrieval (IR) system designed for academic and research environments. It demonstrates the full pipeline of modern search technology, from automated data acquisition to sophisticated ranking algorithms.
+SmartSearch Pro is a high-performance, scalable news search engine designed to demonstrate modern information retrieval techniques. The system aggregates real-time data from global news agencies, processes it through a professional-grade pipeline, and provides ranked results using the BM25 probabilistic model.
 
-## 2. Data Acquisition (Web Scraping)
-Unlike static systems, SmartSearch implements a **Dynamic Web Crawler** to ensure data freshness and relevance.
-- **Technology**: Built using `BeautifulSoup4` and `Requests` for robust HTML parsing.
-- **Automated Workflow**: The `scraper.py` module autonomously navigates news portals (e.g., BBC, Reuters) to extract headlines and summaries.
-- **Live Integration**: The system converts unstructured web content into structured metadata for indexing.
+## System Architecture
 
-## 3. Text Preprocessing Pipeline
-To ensure high-quality retrieval, every document passes through an intensive NLP pipeline in `engine.py`:
-1.  **Tokenization**: Segmenting raw text into discrete semantic units (Tokens).
-2.  **Normalization**: Removing noise (punctuation, numbers) and converting to lowercase.
-3.  **Stop-word Removal**: Eliminating high-frequency, low-meaning words (e.g., "is", "the").
-4.  **Stemming**: Applying the **Porter Stemmer** to reduce words to their linguistic roots (e.g., "calculating" → "calcul"), improving recall across different word forms.
+The following diagram illustrates the data flow and system components:
 
-## 4. Search & Ranking Engine
-The core of the system utilizes advanced mathematical models to rank documents by relevance:
-- **Inverted Index**: A high-efficiency data structure mapping terms to document locations.
-- **BM25 Algorithm (Best Matching 25)**: We upgraded from basic TF-IDF to the BM25 probabilistic model, which is the industry standard for search engines.
-- **Parameters**: Standard tuning ($k1=1.5, b=0.75$) accounts for term frequency saturation and document length normalization.
+```text
+[ Data Sources ] --(Scraping)--> [ scraper.py ] --(Aggregation)--> [ data_collector.py ]
+                                                                          |
+                                                                          |--(Clean & Deduplicate)
+                                                                          |
+[ index.json ] <--(Indexing)--- [ engine.py ] <--(Preprocessing)--- [ CSV Archive ]
+      |                                |
+      |                                |
+[ Search Interface ] <---(Query)--- [ app.py ] <---(Correction)--- [ spell_checker.py ]
+```
 
-## 5. Web Interface (SaaS Dashboard)
-- **Frontend**: A premium "Glassmorphic" dashboard designed with Vanilla CSS for maximum performance.
-- **Real-time Analytics**: Displays live stats including document count, unique term density, and average document length.
-- **Search Experience**: Features debounced instant search, relevance scoring, and detailed document cards.
+## Core Features
 
-## 6. System Evaluation
-The effectiveness is measured using `evaluator.py` based on standard IR metrics:
-- **Precision**: How many retrieved documents are actually relevant.
-- **Recall**: How many of the total relevant documents were successfully found.
-- **F1-Score**: The harmonic mean of Precision and Recall.
+### 1. Data Ingestion Pipeline
+The system automates the collection of data from over 50 global RSS feeds, including Reuters, BBC, NASA, and Wired. It implements strict title-based deduplication to maintain a high-quality, unique corpus of over 1,300 documents.
 
+### 2. Search Engine Core (BM25)
+Unlike traditional TF-IDF models, this system utilizes the BM25 (Best Matching 25) algorithm. This provides superior relevance by addressing term frequency saturation and normalizing for document length variations.
+
+### 3. Advanced Preprocessing
+Every document and query undergoes a rigorous transformation process:
+- Normalization: Case folding and special character removal.
+- Tokenization: Precise regex-based word extraction.
+- Stop Word Filtering: Elimination of non-semantic terms.
+- Stemming: Algorithmic suffix stripping to reduce words to their base forms.
+
+### 4. Intelligent Query Correction
+Integrated spell-checking functionality analyzes user input against the indexed dictionary using string similarity algorithms, providing "Did you mean?" suggestions to enhance user experience.
+
+## Project Structure
+
+```text
+.
+├── app.py                  # Flask web server and API routes
+├── engine.py               # Core IR engine (BM25, Indexing, Preprocessing)
+├── data_collector.py       # Orchestrator for the data ingestion pipeline
+├── scraper.py              # Web scraping module for global news sources
+├── spell_checker.py        # String similarity and query suggestion logic
+├── evaluator.py            # Performance auditing and metrics suite
+├── index.json              # Persistent Inverted Index storage
+├── public_dataset.csv      # Master archive of scraped raw data
+├── templates/
+│   └── index.html          # Responsive web search interface
+└── PROJECT_DOCUMENTATION.md # Detailed technical report
+```
+
+## Technical Specifications
+
+- Backend: Python 3.x, Flask
+- Frontend: HTML5, Tailwind CSS, JavaScript (ES6+)
+- Search Latency: < 0.2ms
+- Data Format: JSON, CSV
+- Ingestion Frequency: Real-time capable
+
+## Installation and Usage
+
+1. Install dependencies:
+   ```bash
+   pip install flask pandas feedparser beautifulsoup4 requests
+   ```
+
+2. Populate the search index:
+   ```bash
+   python data_collector.py
+   ```
+
+3. Start the search server:
+   ```bash
+   python app.py
+   ```
+
+4. Run performance tests:
+   ```bash
+   python evaluator.py
+   ```
+
+## License
+This project was developed as part of the AI & IS Information Retrieval course. All rights reserved.
