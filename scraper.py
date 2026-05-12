@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 import feedparser
-import pandas as pd
 import time
 import os
 import re
@@ -37,14 +36,6 @@ def scrape_rss_feed(url, source_name):
     return articles
 
 
-def load_local_archive():
-    """Loads previously saved data from CSV if available."""
-    if os.path.exists("public_dataset.csv"):
-        try:
-            return pd.read_csv("public_dataset.csv").to_dict('records')
-        except Exception:
-            return []
-    return []
 
 def get_all_diverse_data():
     """Aggregates data from global RSS sources and local storage."""
@@ -96,7 +87,6 @@ def get_all_diverse_data():
         all_data.extend(scrape_rss_feed(url, name))
         time.sleep(0.05)
 
-    all_data.extend(load_local_archive())
 
     # Final Deduplication by URL
     unique_data = []
