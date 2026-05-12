@@ -1,5 +1,6 @@
 import os
 import hashlib
+import pandas as pd
 from engine import IREngine
 from scraper import get_all_diverse_data
 
@@ -7,18 +8,24 @@ INDEX_FILE = "index.json"
 
 def run_automated_pipeline():
     """
-    Direct Index Update Pipeline:
-    Scrapes fresh news data and updates the Inverted Index directly.
+    Search Engine Sync Pipeline:
+    Synchronizes the search engine index with both live web data 
+    and the local CSV reference archive.
     """
     engine = IREngine()
-    engine.load_index(INDEX_FILE)
     
-    print("--- Scraping Fresh Data for Index Update ---")
+    # Load existing index if it exists
+    if os.path.exists(INDEX_FILE):
+        engine.load_index(INDEX_FILE)
+    
+    print("--- Aggregates data from diverse sources ---")
+    # Fetching data from the aggregation pipeline
     articles = get_all_diverse_data()
     if not articles:
+        print("No new data identified.")
         return
 
-    # Direct Update to index.json
+    # Track currently indexed titles to avoid duplicates
     indexed_titles = {meta.get("title", "").lower().strip() for meta in engine.doc_metadata.values()}
     newly_added = 0
 
@@ -37,14 +44,17 @@ def run_automated_pipeline():
                 "source": str(art.get("source", "Web"))
             }
             
-            engine.add_document(doc_id, content, meta)
+            # Optimization: Index BOTH title and content to improve ranking for exact matches
+            engine.add_document(doc_id, f"{title} {content}", meta)
+            
             indexed_titles.add(title.lower())
             newly_added += 1
 
+    # Save the updated index back to JSON
     engine.save_index(INDEX_FILE)
-    print(f"--- Index Updated Successfully ---")
-    print(f"Newly added to index: {newly_added}")
-    print(f"Total searchable documents: {engine.num_docs}")
+    print(f"--- Update Complete ---")
+    print(f"Newly indexed items: {newly_added}")
+    print(f"Total documents in engine: {engine.num_docs}")
 
 if __name__ == "__main__":
     run_automated_pipeline()
